@@ -1,0 +1,174 @@
+package simulation
+
+import (
+	"errors"
+
+	"github.com/jljl1337/blackjack-simulator/internal/blackjack"
+	"github.com/jljl1337/blackjack-simulator/internal/core"
+	"github.com/jljl1337/blackjack-simulator/internal/person"
+)
+
+type ShuffleResult struct {
+	ShuffleId          int
+	NumRound           int
+	PlayerFinalBalance int
+	Error              error
+}
+
+func NewShuffleResult(shuffleId int, numRound int, playerFinalBalance int, err error) ShuffleResult {
+	return ShuffleResult{
+		ShuffleId:          shuffleId,
+		NumRound:           numRound,
+		PlayerFinalBalance: playerFinalBalance,
+		Error:              err,
+	}
+}
+
+func PlayShuffle(
+	shuffleId int,
+	player person.Player,
+	dealer person.Dealer,
+	shoe core.Shoe,
+	rules Rules,
+) ShuffleResult {
+	numRound := 0
+	for {
+		if err := player.PlaceBet(); err != nil {
+			return NewShuffleResult(shuffleId, 0, 0, err)
+		}
+
+		dealer.DrawCard(shoe.Deal())
+		dealer.DrawCard(shoe.Deal())
+		player.DrawCard(shoe.Deal())
+		player.DrawCard(shoe.Deal())
+
+		playerHasBlackjack, err := player.CurrentHandIsBlackjack()
+		if err != nil {
+			return NewShuffleResult(shuffleId, 0, 0, err)
+		}
+
+		dealerHasBlackjack := dealer.HasBlackjack()
+
+		if dealerHasBlackjack {
+			// Dealer has blackjack, check if player also has blackjack
+			if !playerHasBlackjack {
+				// Dealer wins
+				player.LoseCurrentHand(1)
+			}
+			// Player has blackjack, dealer has blackjack, or both
+			// In case of both having blackjack, it's a push
+			player.EndRound()
+			dealer.EndRound()
+			continue
+		}
+
+		// Player's turn
+		for {
+			actions, err := player.GetActions(dealer.GetUpCard())
+			if err != nil {
+				return NewShuffleResult(shuffleId, 0, 0, err)
+			}
+
+			actionsAllowed, err := rules.GetActionsAllowed()
+			if err != nil {
+				return NewShuffleResult(shuffleId, 0, 0, err)
+			}
+
+			selectedAction := blackjack.NA
+
+			currentHandIsBlackjack, err := player.CurrentHandIsBlackjack()
+			if err != nil {
+				return NewShuffleResult(shuffleId, 0, 0, err)
+			}
+
+			if currentHandIsBlackjack {
+				// Skip selecting action if the player has blackjack
+				selectedAction = blackjack.Blackjack
+			} else {
+				for _, action := range actions {
+					if actionsAllowed[action] {
+						selectedAction = action
+						break
+					}
+				}
+			}
+
+			if selectedAction == blackjack.NA {
+				return NewShuffleResult(shuffleId, 0, 0, errors.New("no valid action selected"))
+			}
+
+			playerLoseRatio := 0.0
+
+			switch selectedAction {
+			case blackjack.Blackjack:
+				// If the dealer has blackjack, the player already pushed
+			case blackjack.Hit:
+				player.Hit(shoe.Deal())
+				isBusted, err := player.CurrentHandIsBusted()
+				if err != nil {
+					return NewShuffleResult(shuffleId, 0, 0, err)
+				}
+				if isBusted {
+					// Player busts, dealer wins
+					playerLoseRatio = 1.0 // Player loses the full bet
+				} else {
+					// Player hits, continue to next action
+					continue
+				}
+			case blackjack.Stand:
+			case blackjack.Double:
+				if err := player.DoubleDown(shoe.Deal()); err != nil {
+					return NewShuffleResult(shuffleId, 0, 0, err)
+				}
+				isBusted, err := player.CurrentHandIsBusted()
+				if err != nil {
+					return NewShuffleResult(shuffleId, 0, 0, err)
+				}
+				if isBusted {
+					// Player busts, dealer wins
+					playerLoseRatio = 1.0 // Player loses the full bet
+				}
+			case blackjack.Split:
+				newCards := []core.Card{shoe.Deal(), shoe.Deal()}
+				if err := player.Split(newCards); err != nil {
+					return NewShuffleResult(shuffleId, 0, 0, err)
+				}
+				// After splitting, player plays the new hand
+				continue
+			case blackjack.Surrender:
+				playerLoseRatio = 0.5 // Player surrenders, loses half the bet
+			}
+
+			// Should only reach here if the current hand is ended
+			if playerLoseRatio > 0 {
+				// Player loses the hand, dealer wins
+				player.LoseCurrentHand(playerLoseRatio)
+			}
+
+			if !player.HasNextHand() {
+				break
+			}
+
+			// Player has more hands to play, continue to the next hand
+			player.NextHand()
+		}
+
+		// Dealer's turn
+		for dealer.NeedsToHit() {
+			dealer.DrawCard(shoe.Deal())
+		}
+
+		dealerValue := dealer.GetHandValue()
+		player.CalculateHandBet(dealerValue)
+
+		player.EndRound()
+		dealer.EndRound()
+
+		numRound++
+
+		if shoe.NeedsShuffle() {
+			// Finish this shuffle and start a new one
+			return NewShuffleResult(shuffleId, numRound, player.GetBalance(), nil)
+		}
+	}
+}
