@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/jljl1337/blackjack-simulator/internal/blackjack"
@@ -22,6 +23,7 @@ type Simulator struct {
 	numDecks    uint
 	penetration float64
 	csvFile     string
+	numWorkers  uint
 }
 
 type Config struct {
@@ -34,8 +36,13 @@ type Config struct {
 func NewSimulator() *Simulator {
 	configFile := flag.String("config", "config.json", "Path to configuration file")
 	csvFile := flag.String("csv", "", "CSV file to export results to")
+	numWorkers := flag.Uint("num-workers", 0, "Number of workers to use for concurrent processing")
 
 	flag.Parse()
+
+	if *numWorkers == 0 {
+		*numWorkers = uint(runtime.NumCPU())
+	}
 
 	config, err := readConfig(*configFile)
 	if err != nil {
@@ -44,12 +51,15 @@ func NewSimulator() *Simulator {
 	}
 
 	fmt.Printf("Using seed: %d\n", config.Seed)
+	fmt.Printf("Number of workers: %d\n", *numWorkers)
+
 	return &Simulator{
 		seed:        config.Seed,
 		numShuffles: config.NumShuffles,
 		numDecks:    config.NumDecks,
 		penetration: config.Penetration,
 		csvFile:     *csvFile,
+		numWorkers:  *numWorkers,
 	}
 }
 
@@ -103,31 +113,61 @@ func readConfig(configFile string) (Config, error) {
 func (s *Simulator) Run() {
 	random := rand.New(rand.NewSource(s.seed))
 
-	var balanceSum int64
-	var shuffleResults []result.ShuffleResult
+	inputChan := make(chan ShuffleInput)
+	resultChan := make(chan result.ShuffleResult)
 
-	for i := range s.numShuffles {
-		strategy, _ := blackjack.NewBasicStrategyS17()
-		player := person.NewPlayer(strategy)
-		dealer := person.NewDealer()
-		rules := NewPlayRules()
-		shoe := core.NewShoe(s.numDecks, s.penetration, random)
-		result := PlayShuffle(i, *player, *dealer, *shoe, rules)
-		if result.Error != nil {
-			fmt.Printf("Error in shuffle %d: %v\n", i, result.Error)
+	// Start consumer workers
+	for range s.numWorkers {
+		go PlayShuffleWorker(inputChan, resultChan)
+	}
+
+	shuffleId := uint(0)
+
+	// Send numWorkers shuffle inputs to the input channel
+	for range s.numWorkers {
+		s.sendInput(inputChan, shuffleId, random)
+		shuffleId++
+	}
+
+	// Collect results from the result channel
+	shuffleResults := make([]result.ShuffleResult, s.numWorkers)
+
+	for {
+		shuffleResult := <-resultChan
+		if shuffleResult.Error != nil {
+			fmt.Printf("Error in shuffle %d: %v\n", shuffleResult.ShuffleId, shuffleResult.Error)
 			break
 		}
 
-		roundBalance := result.GetBalance()
+		fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.GetNumRounds(), shuffleResult.GetBalance())
 
-		fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", i, result.GetNumRounds(), roundBalance)
+		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
-		balanceSum += int64(roundBalance)
+		finishedShuffles := uint(0)
+		for _, res := range shuffleResults {
+			if res.GetNumRounds() <= 0 {
+				break
+			}
+			finishedShuffles++
+		}
 
-		shuffleResults = append(shuffleResults, result)
+		if finishedShuffles >= s.numShuffles {
+			fmt.Printf("finished %d shuffles\n", finishedShuffles)
+			close(inputChan)
+			break
+		}
+
+		shuffleResults = append(shuffleResults, result.NewShuffleResult(0, nil))
+		s.sendInput(inputChan, shuffleId, random)
+		shuffleId++
 	}
 
+	var balanceSum int64
+	for _, result := range shuffleResults {
+		balanceSum += int64(result.GetBalance())
+	}
 	averageBalance := float64(balanceSum) / float64(s.numShuffles)
+
 	fmt.Printf("Average balance after %d shuffles: %.2f\n", s.numShuffles, averageBalance)
 	fmt.Printf("Final balance sum: %d\n", balanceSum)
 
@@ -139,4 +179,22 @@ func (s *Simulator) Run() {
 			return
 		}
 	}
+}
+
+func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
+	strategy, _ := blackjack.NewBasicStrategyS17()
+	player := person.NewPlayer(strategy)
+	dealer := person.NewDealer()
+	rules := NewPlayRules()
+	shoe := core.NewShoe(s.numDecks, s.penetration, random)
+
+	input := ShuffleInput{
+		ShuffleId: shuffleId,
+		Player:    *player,
+		Dealer:    *dealer,
+		Shoe:      *shoe,
+		Rules:     rules,
+	}
+
+	inputChan <- input
 }
