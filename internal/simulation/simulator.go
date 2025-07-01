@@ -233,7 +233,7 @@ out:
 		}
 	}
 
-	log.Printf("Simulation completed successfully.\n")
+	log.Printf("Simulation completed successfully\n")
 	return nil
 }
 
