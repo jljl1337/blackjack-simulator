@@ -24,6 +24,7 @@ type Simulator struct {
 	penetration float64
 	csvFile     string
 	numWorkers  uint
+	strategy    blackjack.Strategy
 }
 
 type Config struct {
@@ -53,6 +54,12 @@ func NewSimulator() *Simulator {
 	fmt.Printf("Using seed: %d\n", config.Seed)
 	fmt.Printf("Number of workers: %d\n", *numWorkers)
 
+	strategy, err := blackjack.NewBasicStrategyS17()
+	if err != nil {
+		fmt.Printf("Error creating strategy: %v\n", err)
+		return nil
+	}
+
 	return &Simulator{
 		seed:        config.Seed,
 		numShuffles: config.NumShuffles,
@@ -60,6 +67,7 @@ func NewSimulator() *Simulator {
 		penetration: config.Penetration,
 		csvFile:     *csvFile,
 		numWorkers:  *numWorkers,
+		strategy:    strategy,
 	}
 }
 
@@ -182,8 +190,7 @@ func (s *Simulator) Run() {
 }
 
 func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
-	strategy, _ := blackjack.NewBasicStrategyS17()
-	player := person.NewPlayer(strategy)
+	player := person.NewPlayer(s.strategy)
 	dealer := person.NewDealer()
 	rules := NewPlayRules()
 	shoe := core.NewShoe(s.numDecks, s.penetration, random)
