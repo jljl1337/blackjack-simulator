@@ -8,22 +8,6 @@ import (
 	"github.com/jljl1337/blackjack-simulator/internal/person"
 )
 
-type ShuffleResult struct {
-	ShuffleId          int
-	NumRound           int
-	PlayerFinalBalance int
-	Error              error
-}
-
-func NewShuffleResult(shuffleId int, numRound int, playerFinalBalance int, err error) ShuffleResult {
-	return ShuffleResult{
-		ShuffleId:          shuffleId,
-		NumRound:           numRound,
-		PlayerFinalBalance: playerFinalBalance,
-		Error:              err,
-	}
-}
-
 func PlayShuffle(
 	shuffleId int,
 	player person.Player,
@@ -34,7 +18,7 @@ func PlayShuffle(
 	numRound := 0
 	for {
 		if err := player.PlaceBet(); err != nil {
-			return NewShuffleResult(shuffleId, 0, 0, err)
+			return NewShuffleResultWithError(shuffleId, err)
 		}
 
 		dealer.DrawCard(shoe.Deal())
@@ -44,7 +28,7 @@ func PlayShuffle(
 
 		playerHasBlackjack, err := player.CurrentHandIsBlackjack()
 		if err != nil {
-			return NewShuffleResult(shuffleId, 0, 0, err)
+			return NewShuffleResultWithError(shuffleId, err)
 		}
 
 		dealerHasBlackjack := dealer.HasBlackjack()
@@ -55,8 +39,7 @@ func PlayShuffle(
 				// Dealer wins
 				player.LoseCurrentHand(1)
 			}
-			// Player has blackjack, dealer has blackjack, or both
-			// In case of both having blackjack, it's a push
+			// Player also has blackjack, it's a push
 			player.EndRound()
 			dealer.EndRound()
 			continue
@@ -66,19 +49,19 @@ func PlayShuffle(
 		for {
 			actions, err := player.GetActions(dealer.GetUpCard())
 			if err != nil {
-				return NewShuffleResult(shuffleId, 0, 0, err)
+				return NewShuffleResultWithError(shuffleId, err)
 			}
 
 			actionsAllowed, err := rules.GetActionsAllowed()
 			if err != nil {
-				return NewShuffleResult(shuffleId, 0, 0, err)
+				return NewShuffleResultWithError(shuffleId, err)
 			}
 
 			selectedAction := blackjack.NA
 
 			currentHandIsBlackjack, err := player.CurrentHandIsBlackjack()
 			if err != nil {
-				return NewShuffleResult(shuffleId, 0, 0, err)
+				return NewShuffleResultWithError(shuffleId, err)
 			}
 
 			if currentHandIsBlackjack {
@@ -94,7 +77,7 @@ func PlayShuffle(
 			}
 
 			if selectedAction == blackjack.NA {
-				return NewShuffleResult(shuffleId, 0, 0, errors.New("no valid action selected"))
+				return NewShuffleResultWithError(shuffleId, errors.New("no valid action selected"))
 			}
 
 			playerLoseRatio := 0.0
@@ -106,7 +89,7 @@ func PlayShuffle(
 				player.Hit(shoe.Deal())
 				isBusted, err := player.CurrentHandIsBusted()
 				if err != nil {
-					return NewShuffleResult(shuffleId, 0, 0, err)
+					return NewShuffleResultWithError(shuffleId, err)
 				}
 				if isBusted {
 					// Player busts, dealer wins
@@ -118,11 +101,11 @@ func PlayShuffle(
 			case blackjack.Stand:
 			case blackjack.Double:
 				if err := player.DoubleDown(shoe.Deal()); err != nil {
-					return NewShuffleResult(shuffleId, 0, 0, err)
+					return NewShuffleResultWithError(shuffleId, err)
 				}
 				isBusted, err := player.CurrentHandIsBusted()
 				if err != nil {
-					return NewShuffleResult(shuffleId, 0, 0, err)
+					return NewShuffleResultWithError(shuffleId, err)
 				}
 				if isBusted {
 					// Player busts, dealer wins
@@ -131,7 +114,7 @@ func PlayShuffle(
 			case blackjack.Split:
 				newCards := []core.Card{shoe.Deal(), shoe.Deal()}
 				if err := player.Split(newCards); err != nil {
-					return NewShuffleResult(shuffleId, 0, 0, err)
+					return NewShuffleResultWithError(shuffleId, err)
 				}
 				// After splitting, player plays the new hand
 				continue
@@ -168,7 +151,7 @@ func PlayShuffle(
 
 		if shoe.NeedsShuffle() {
 			// Finish this shuffle and start a new one
-			return NewShuffleResult(shuffleId, numRound, player.GetBalance(), nil)
+			return NewShuffleResult(shuffleId, numRound, player.GetBalance())
 		}
 	}
 }
