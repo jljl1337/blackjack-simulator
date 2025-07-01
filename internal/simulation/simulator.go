@@ -8,23 +8,29 @@ import (
 
 	"github.com/jljl1337/blackjack-simulator/internal/blackjack"
 	"github.com/jljl1337/blackjack-simulator/internal/core"
+	"github.com/jljl1337/blackjack-simulator/internal/exporter"
 	"github.com/jljl1337/blackjack-simulator/internal/person"
+	"github.com/jljl1337/blackjack-simulator/internal/result"
 )
 
 type Simulator struct {
 	seed        int64
 	numShuffles int
+	csvFile     string
 }
 
 func NewSimulator() *Simulator {
 	seed := flag.Int64("seed", time.Now().UnixNano(), "Random seed for simulation")
 	numShuffles := flag.Int("num-shuffles", 100000, "Number of shuffles to simulate")
+	csvFile := flag.String("csv", "", "CSV file to export results to")
+
 	flag.Parse()
 
 	fmt.Printf("Using seed: %d\n", *seed)
 	return &Simulator{
 		seed:        *seed,
 		numShuffles: *numShuffles,
+		csvFile:     *csvFile,
 	}
 }
 
@@ -33,6 +39,7 @@ func (s *Simulator) Run() {
 	random := rand.New(rand.NewSource(s.seed))
 
 	var balanceSum int64
+	var shuffleResults []result.ShuffleResult
 
 	for i := range s.numShuffles {
 		strategy, _ := blackjack.NewBasicStrategyS17()
@@ -45,12 +52,32 @@ func (s *Simulator) Run() {
 			fmt.Printf("Error in shuffle %d: %v\n", i, result.Error)
 			break
 		}
-		fmt.Printf("Shuffle %.7d: Played %.3d rounds with final balance of Balance: %d\n", i, result.NumRound, result.PlayerFinalBalance)
 
-		balanceSum += int64(result.PlayerFinalBalance)
+		// Calculate the final balance for the player
+		playerFinalBalance := 0
+		for _, roundResult := range result.RoundResults {
+			for _, playerHand := range roundResult.PlayerHands {
+				playerFinalBalance += playerHand.GetBet() - playerHand.GetBetPlaced()
+			}
+		}
+
+		fmt.Printf("Shuffle %.7d: Played %.3d rounds with final balance of: %d\n", i, len(result.RoundResults), playerFinalBalance)
+
+		balanceSum += int64(playerFinalBalance)
+
+		shuffleResults = append(shuffleResults, result)
 	}
 
 	averageBalance := float64(balanceSum) / float64(s.numShuffles)
 	fmt.Printf("Average balance after %d shuffles: %.2f\n", s.numShuffles, averageBalance)
 	fmt.Printf("Final balance sum: %d\n", balanceSum)
+
+	if s.csvFile != "" {
+		csvExporter := exporter.NewCSVExporter(s.csvFile)
+		fmt.Printf("Exporting results to CSV...\n")
+		if err := csvExporter.Export(shuffleResults); err != nil {
+			fmt.Printf("Error exporting results to CSV: %v\n", err)
+			return
+		}
+	}
 }
