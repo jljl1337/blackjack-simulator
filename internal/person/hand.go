@@ -75,7 +75,7 @@ func (h *Hand) AddCard(card core.Card) {
 func (h Hand) String() string {
 	str := ""
 	for _, card := range h.cards {
-		str += card.String() + " "
+		str += card.String() + ";"
 	}
-	return str
+	return str[:len(str)-1]
 }
