@@ -222,8 +222,8 @@ out:
 	}
 	averageBalance := float64(balanceSum) / float64(countedShuffles)
 
-	log.Printf("Average balance after %d shuffles: %.2f\n", countedShuffles, averageBalance)
-	log.Printf("Final balance sum: %d\n", balanceSum)
+	log.Printf("Average balance: %.2f\n", averageBalance)
+	log.Printf("Total balance: %d\n", balanceSum)
 
 	if s.csvFile != "" {
 		csvExporter := exporter.NewCSVExporter(s.csvFile)
