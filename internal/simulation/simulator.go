@@ -154,6 +154,8 @@ func (s *Simulator) Run() error {
 
 	shuffleId := uint(0)
 
+	startTime := time.Now()
+
 	// Send numWorkers shuffle inputs to the input channel
 	for range s.numWorkers {
 		s.sendInput(inputChan, shuffleId, random)
@@ -211,7 +213,7 @@ out:
 				}
 
 				if finish {
-					log.Printf("Finished %d shuffles\n", countedShuffles)
+					log.Printf("Finished %d shuffles using %.3f seconds\n", countedShuffles, time.Since(startTime).Seconds())
 					close(inputChan)
 					break out
 				}
