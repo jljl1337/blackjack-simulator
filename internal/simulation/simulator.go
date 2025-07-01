@@ -20,6 +20,8 @@ import (
 type Simulator struct {
 	seed        int64
 	numShuffles uint
+	numRounds   uint
+	numHands    uint
 	numDecks    uint
 	penetration float64
 	csvFile     string
@@ -30,6 +32,8 @@ type Simulator struct {
 type Config struct {
 	Seed        int64   `json:"seed"`
 	NumShuffles uint    `json:"numShuffles"`
+	NumRounds   uint    `json:"numRounds"`
+	NumHands    uint    `json:"numHands"`
 	NumDecks    uint    `json:"numDecks"`
 	Penetration float64 `json:"penetration"`
 }
@@ -64,6 +68,8 @@ func NewSimulator() *Simulator {
 		seed:        config.Seed,
 		numShuffles: config.NumShuffles,
 		numDecks:    config.NumDecks,
+		numRounds:   config.NumRounds,
+		numHands:    config.NumHands,
 		penetration: config.Penetration,
 		csvFile:     *csvFile,
 		numWorkers:  *numWorkers,
@@ -98,8 +104,19 @@ func readConfig(configFile string) (Config, error) {
 	}
 
 	// Validate the config
-	if config.NumShuffles <= 0 {
-		return Config{}, fmt.Errorf("numShuffles must be set to a value greater than 0")
+	conditionCount := 0
+	if config.NumShuffles > 0 {
+		conditionCount++
+	}
+	if config.NumRounds > 0 {
+		conditionCount++
+	}
+	if config.NumHands > 0 {
+		conditionCount++
+	}
+
+	if conditionCount != 1 {
+		return Config{}, fmt.Errorf("exactly one of numShuffles, numRounds, or numHands must be set to a value greater than 0")
 	}
 
 	if config.NumDecks <= 0 {
@@ -155,6 +172,8 @@ out:
 
 		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
+		finish := false
+
 		if shuffleResult.ShuffleId == countedShuffles {
 			for i := countedShuffles; i < uint(len(shuffleResults)); i++ {
 				if shuffleResults[i].NumRounds <= 0 {
@@ -162,9 +181,29 @@ out:
 				}
 
 				countedShuffles++
-				count++
 
-				if count >= s.numShuffles {
+				if s.numShuffles > 0 {
+					count++
+					if count >= s.numShuffles {
+						finish = true
+					}
+				}
+
+				if s.numRounds > 0 {
+					count += uint(shuffleResults[i].NumRounds)
+					if count >= s.numRounds {
+						finish = true
+					}
+				}
+
+				if s.numHands > 0 {
+					count += uint(shuffleResults[i].NumHands)
+					if count >= s.numHands {
+						finish = true
+					}
+				}
+
+				if finish {
 					fmt.Printf("finished %d shuffles\n", countedShuffles)
 					close(inputChan)
 					break out
