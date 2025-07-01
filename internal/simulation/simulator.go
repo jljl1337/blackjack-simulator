@@ -7,6 +7,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"runtime"
 	"time"
 
 	"github.com/jljl1337/blackjack-simulator/internal/blackjack"
@@ -22,6 +23,8 @@ type Simulator struct {
 	numDecks    uint
 	penetration float64
 	csvFile     string
+	numWorkers  uint
+	strategy    blackjack.Strategy
 }
 
 type Config struct {
@@ -34,8 +37,13 @@ type Config struct {
 func NewSimulator() *Simulator {
 	configFile := flag.String("config", "config.json", "Path to configuration file")
 	csvFile := flag.String("csv", "", "CSV file to export results to")
+	numWorkers := flag.Uint("num-workers", 0, "Number of workers to use for concurrent processing")
 
 	flag.Parse()
+
+	if *numWorkers == 0 {
+		*numWorkers = uint(runtime.NumCPU())
+	}
 
 	config, err := readConfig(*configFile)
 	if err != nil {
@@ -44,12 +52,22 @@ func NewSimulator() *Simulator {
 	}
 
 	fmt.Printf("Using seed: %d\n", config.Seed)
+	fmt.Printf("Number of workers: %d\n", *numWorkers)
+
+	strategy, err := blackjack.NewBasicStrategyS17()
+	if err != nil {
+		fmt.Printf("Error creating strategy: %v\n", err)
+		return nil
+	}
+
 	return &Simulator{
 		seed:        config.Seed,
 		numShuffles: config.NumShuffles,
 		numDecks:    config.NumDecks,
 		penetration: config.Penetration,
 		csvFile:     *csvFile,
+		numWorkers:  *numWorkers,
+		strategy:    strategy,
 	}
 }
 
@@ -103,32 +121,71 @@ func readConfig(configFile string) (Config, error) {
 func (s *Simulator) Run() {
 	random := rand.New(rand.NewSource(s.seed))
 
-	var balanceSum int64
-	var shuffleResults []result.ShuffleResult
+	inputChan := make(chan ShuffleInput, s.numWorkers)
+	resultChan := make(chan result.ShuffleResult, s.numWorkers)
 
-	for i := range s.numShuffles {
-		strategy, _ := blackjack.NewBasicStrategyS17()
-		player := person.NewPlayer(strategy)
-		dealer := person.NewDealer()
-		rules := NewPlayRules()
-		shoe := core.NewShoe(s.numDecks, s.penetration, random)
-		result := PlayShuffle(i, *player, *dealer, *shoe, rules)
-		if result.Error != nil {
-			fmt.Printf("Error in shuffle %d: %v\n", i, result.Error)
+	// Start consumer workers
+	for range s.numWorkers {
+		go PlayShuffleWorker(inputChan, resultChan)
+	}
+
+	shuffleId := uint(0)
+
+	// Send numWorkers shuffle inputs to the input channel
+	for range s.numWorkers {
+		s.sendInput(inputChan, shuffleId, random)
+		shuffleId++
+	}
+
+	// Collect results from the result channel
+	shuffleResults := make([]result.ShuffleResult, s.numWorkers)
+
+	count := uint(0)
+	countedShuffles := uint(0)
+
+out:
+	for {
+		shuffleResult := <-resultChan
+		if shuffleResult.Error != nil {
+			fmt.Printf("Error in shuffle %d: %v\n", shuffleResult.ShuffleId, shuffleResult.Error)
 			break
 		}
 
-		roundBalance := result.GetBalance()
+		// fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
 
-		fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", i, result.GetNumRounds(), roundBalance)
+		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
-		balanceSum += int64(roundBalance)
+		if shuffleResult.ShuffleId == countedShuffles {
+			for i := countedShuffles; i < uint(len(shuffleResults)); i++ {
+				if shuffleResults[i].NumRounds <= 0 {
+					break
+				}
 
-		shuffleResults = append(shuffleResults, result)
+				countedShuffles++
+				count++
+
+				if count >= s.numShuffles {
+					fmt.Printf("finished %d shuffles\n", countedShuffles)
+					close(inputChan)
+					break out
+				}
+			}
+		}
+
+		shuffleResults = append(shuffleResults, result.NewShuffleResult(0, nil))
+		s.sendInput(inputChan, shuffleId, random)
+		shuffleId++
 	}
 
-	averageBalance := float64(balanceSum) / float64(s.numShuffles)
-	fmt.Printf("Average balance after %d shuffles: %.2f\n", s.numShuffles, averageBalance)
+	shuffleResults = shuffleResults[:countedShuffles]
+
+	var balanceSum int64
+	for _, result := range shuffleResults {
+		balanceSum += int64(result.Balance)
+	}
+	averageBalance := float64(balanceSum) / float64(countedShuffles)
+
+	fmt.Printf("Average balance after %d shuffles: %.2f\n", countedShuffles, averageBalance)
 	fmt.Printf("Final balance sum: %d\n", balanceSum)
 
 	if s.csvFile != "" {
@@ -139,4 +196,21 @@ func (s *Simulator) Run() {
 			return
 		}
 	}
+}
+
+func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
+	player := person.NewPlayer(s.strategy)
+	dealer := person.NewDealer()
+	rules := NewPlayRules()
+	shoe := core.NewShoe(s.numDecks, s.penetration, random)
+
+	input := ShuffleInput{
+		ShuffleId: shuffleId,
+		Player:    *player,
+		Dealer:    *dealer,
+		Shoe:      *shoe,
+		Rules:     rules,
+	}
+
+	inputChan <- input
 }

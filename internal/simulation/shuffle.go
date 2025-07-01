@@ -9,14 +9,28 @@ import (
 	"github.com/jljl1337/blackjack-simulator/internal/result"
 )
 
-func PlayShuffle(
-	shuffleId uint,
-	player person.Player,
-	dealer person.Dealer,
-	shoe core.Shoe,
-	rules Rules,
-) result.ShuffleResult {
+type ShuffleInput struct {
+	ShuffleId uint
+	Player    person.Player
+	Dealer    person.Dealer
+	Shoe      core.Shoe
+	Rules     Rules
+}
+
+func PlayShuffleWorker(inputChan <-chan ShuffleInput, resultChan chan<- result.ShuffleResult) {
+	for input := range inputChan {
+		resultChan <- PlayShuffle(input)
+	}
+}
+
+func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 	roundResults := make([]result.RoundResult, 0)
+
+	shuffleId := input.ShuffleId
+	player := input.Player
+	dealer := input.Dealer
+	shoe := input.Shoe
+	rules := input.Rules
 
 	for {
 		if err := player.PlaceBet(); err != nil {
