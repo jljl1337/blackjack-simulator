@@ -234,7 +234,7 @@ func (p *Player) EndRound() {
 	}
 
 	p.currentHand = 0
-	p.hands = []*PlayerHand{{}}
+	p.hands = []*PlayerHand{NewPlayerHand()}
 }
 
 func (p Player) GetBalance() int {
