@@ -13,7 +13,7 @@ func NewDealer() *Dealer {
 }
 
 func (d *Dealer) DrawCard(card core.Card) {
-	d.hand.cards = append(d.hand.cards, card)
+	d.hand.AddCard(card)
 }
 
 func (d Dealer) HasBlackjack() bool {
