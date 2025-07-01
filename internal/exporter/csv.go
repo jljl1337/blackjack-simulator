@@ -22,16 +22,16 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 	data := make([][]string, 0, len(results))
 
 	data = append(data, []string{
-		"ShuffleID",
-		"RoundID",
-		"HandID",
-		"DealerHand",
-		"PlayerHands",
-		"DealerValue",
-		"PlayerValue",
-		"PlayerActions",
-		"BetPlaced",
-		"Bet",
+		"shuffle_id",
+		"round_id",
+		"hand_id",
+		"dealer_hand",
+		"player_hand",
+		"dealer_value",
+		"player_value",
+		"player_actions",
+		"bet_placed",
+		"bet",
 	})
 
 	for resultID, result := range results {
