@@ -13,7 +13,7 @@ func NewDealer() *Dealer {
 }
 
 func (d *Dealer) DrawCard(card core.Card) {
-	d.hand.cards = append(d.hand.cards, card)
+	d.hand.AddCard(card)
 }
 
 func (d Dealer) HasBlackjack() bool {
@@ -31,6 +31,10 @@ func (d Dealer) GetUpCard() core.Card {
 
 func (d Dealer) GetHandValue() int {
 	return d.hand.Value()
+}
+
+func (d Dealer) GetHand() Hand {
+	return d.hand
 }
 
 func (d *Dealer) EndRound() {

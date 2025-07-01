@@ -12,6 +12,6 @@ RUN CGO_ENABLED=0 go build -o /go/bin/app cmd/blackjack-simulator/main.go
 # Now copy it into our base image.
 FROM gcr.io/distroless/static AS runtime
 
-COPY --from=build /go/bin/app /
+COPY --from=build /go/bin/app /app/blackjack-simulator
 
-ENTRYPOINT ["/app"]
+ENTRYPOINT ["/app/blackjack-simulator"]

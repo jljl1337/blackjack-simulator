@@ -10,14 +10,12 @@ import (
 type Player struct {
 	currentHand int
 	hands       []*PlayerHand
-	balance     int
 	strategy    blackjack.Strategy
 }
 
 func NewPlayer(strategy blackjack.Strategy) *Player {
 	return &Player{
-		hands:    []*PlayerHand{{}},
-		balance:  0,
+		hands:    []*PlayerHand{NewPlayerHand()},
 		strategy: strategy,
 	}
 }
@@ -29,8 +27,7 @@ func (p *Player) PlaceBet() error {
 		return err
 	}
 
-	currentHand.Bet = betAmount
-	p.balance -= currentHand.Bet
+	currentHand.PlaceBet(betAmount)
 
 	return nil
 }
@@ -39,7 +36,7 @@ func (p *Player) PlaceBet() error {
 // round, based on the dealer's hand value and the player's hand value.
 func (p *Player) CalculateHandBet(dealerValue int) {
 	for i, hand := range p.hands {
-		if hand.Bet == 0 {
+		if hand.GetBet() != hand.GetBetPlaced() {
 			// This hand is either busted or surrendered
 		} else if hand.IsBlackjack() {
 			// Note that if the dealer has a blackjack, the bet is calculated at
@@ -102,6 +99,16 @@ func (p *Player) GetActions(dealerUpCard core.Card) ([]blackjack.Action, error) 
 	return actions, nil
 }
 
+func (p *Player) RecordAction(action blackjack.Action) error {
+	currentHand, err := p.GetCurrentHand()
+	if err != nil {
+		return err
+	}
+
+	currentHand.AddAction(action)
+	return nil
+}
+
 func (p *Player) Hit(newCard core.Card) error {
 	currentHand, err := p.GetCurrentHand()
 	if err != nil {
@@ -126,8 +133,7 @@ func (p *Player) DoubleDown(newCard core.Card) error {
 	}
 
 	// Double the bet
-	currentHand.Bet *= 2
-	p.balance -= currentHand.Bet
+	currentHand.PlaceBet(currentHand.GetBet() * 2)
 
 	// Add the new card to the current hand
 	currentHand.AddCard(newCard)
@@ -154,8 +160,7 @@ func (p *Player) Split(newCards []core.Card) error {
 	p.hands = append(p.hands, newHand)
 
 	// Adjust the bet for the new hand
-	p.balance -= currentHand.Bet
-	newHand.Bet = currentHand.Bet
+	newHand.PlaceBet(currentHand.GetBet())
 
 	// Move the second card from the current hand to the new hand
 	newHand.AddCard(currentHand.cards[1])
@@ -168,12 +173,12 @@ func (p *Player) Split(newCards []core.Card) error {
 	return nil
 }
 
-func (p *Player) WinCurrentHand(loseRatio float64) error {
-	return p.winHand(p.currentHand, loseRatio)
+func (p *Player) WinCurrentHand(winRatio float64) error {
+	return p.winHand(p.currentHand, winRatio)
 }
 
-func (p *Player) LoseCurrentHand(winRatio float64) error {
-	return p.loseHand(p.currentHand, winRatio)
+func (p *Player) LoseCurrentHand(loseRatio float64) error {
+	return p.loseHand(p.currentHand, loseRatio)
 }
 
 func (p *Player) winHand(index int, winRatio float64) error {
@@ -190,8 +195,7 @@ func (p *Player) adjustHandBet(index int, ratio float64) error {
 		return err
 	}
 
-	// Adjust the bet based on the ratio
-	hand.Bet = int(float64(hand.Bet) * ratio)
+	hand.AdjustBetByRatio(ratio)
 
 	return nil
 }
@@ -226,17 +230,12 @@ func (p *Player) HasNextHand() bool {
 	return p.currentHand < len(p.hands)-1
 }
 
-// EndRound resets the player's state for a new round
-func (p *Player) EndRound() {
-	// Move the bet back into the balance
-	for _, hand := range p.hands {
-		p.balance += hand.Bet
-	}
-
-	p.currentHand = 0
-	p.hands = []*PlayerHand{{}}
+func (p Player) GetHands() []*PlayerHand {
+	return p.hands
 }
 
-func (p Player) GetBalance() int {
-	return p.balance
+// EndRound resets the player's state for a new round
+func (p *Player) EndRound() {
+	p.currentHand = 0
+	p.hands = []*PlayerHand{NewPlayerHand()}
 }

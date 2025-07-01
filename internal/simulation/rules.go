@@ -24,6 +24,6 @@ func (r PlayRules) GetActionsAllowed() (map[blackjack.Action]bool, error) {
 		blackjack.Stand:     true,
 		blackjack.Double:    true,
 		blackjack.Split:     true,
-		blackjack.Surrender: false,
+		blackjack.Surrender: true,
 	}, nil
 }
