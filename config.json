@@ -1,6 +1,6 @@
 {
   "seed": 1337,
-  "numShuffles": 100000,
+  "numHands": 10000000,
   "numDecks": 8,
   "penetration": 0.75
 }
