@@ -27,6 +27,7 @@ type Simulator struct {
 	penetration float64
 	csvFile     string
 	numWorkers  uint
+	verbose     bool
 	strategy    blackjack.Strategy
 }
 
@@ -43,8 +44,13 @@ func NewSimulator() (*Simulator, error) {
 	configFile := flag.String("config", "config.json", "Path to configuration file")
 	csvFile := flag.String("csv", "", "CSV file to export results to")
 	numWorkers := flag.Uint("num-workers", 0, "Number of workers to use for concurrent processing")
+	verbose := flag.Bool("verbose", false, "Enable verbose logging")
 
 	flag.Parse()
+
+	if *verbose {
+		log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+	}
 
 	if *numWorkers == 0 {
 		*numWorkers = uint(runtime.NumCPU())
@@ -72,6 +78,7 @@ func NewSimulator() (*Simulator, error) {
 		penetration: config.Penetration,
 		csvFile:     *csvFile,
 		numWorkers:  *numWorkers,
+		verbose:     *verbose,
 		strategy:    strategy,
 	}, nil
 }
@@ -147,6 +154,8 @@ func (s *Simulator) Run() error {
 
 	shuffleId := uint(0)
 
+	startTime := time.Now()
+
 	// Send numWorkers shuffle inputs to the input channel
 	for range s.numWorkers {
 		s.sendInput(inputChan, shuffleId, random)
@@ -166,7 +175,9 @@ out:
 			return fmt.Errorf("error in shuffle %d: %w", shuffleResult.ShuffleId, shuffleResult.Error)
 		}
 
-		// log.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
+		if s.verbose {
+			log.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
+		}
 
 		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
@@ -202,7 +213,7 @@ out:
 				}
 
 				if finish {
-					log.Printf("Finished %d shuffles\n", countedShuffles)
+					log.Printf("Finished %d shuffles using %.3f seconds\n", countedShuffles, time.Since(startTime).Seconds())
 					close(inputChan)
 					break out
 				}
