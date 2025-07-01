@@ -121,8 +121,8 @@ func readConfig(configFile string) (Config, error) {
 func (s *Simulator) Run() {
 	random := rand.New(rand.NewSource(s.seed))
 
-	inputChan := make(chan ShuffleInput)
-	resultChan := make(chan result.ShuffleResult)
+	inputChan := make(chan ShuffleInput, s.numWorkers)
+	resultChan := make(chan result.ShuffleResult, s.numWorkers)
 
 	// Start consumer workers
 	for range s.numWorkers {
@@ -140,6 +140,10 @@ func (s *Simulator) Run() {
 	// Collect results from the result channel
 	shuffleResults := make([]result.ShuffleResult, s.numWorkers)
 
+	count := uint(0)
+	countedShuffles := uint(0)
+
+out:
 	for {
 		shuffleResult := <-resultChan
 		if shuffleResult.Error != nil {
@@ -147,22 +151,25 @@ func (s *Simulator) Run() {
 			break
 		}
 
-		fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.GetNumRounds(), shuffleResult.GetBalance())
+		// fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
 
 		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
-		finishedShuffles := uint(0)
-		for _, res := range shuffleResults {
-			if res.GetNumRounds() <= 0 {
-				break
-			}
-			finishedShuffles++
-		}
+		if shuffleResult.ShuffleId == countedShuffles {
+			for i := countedShuffles; i < uint(len(shuffleResults)); i++ {
+				if shuffleResults[i].NumRounds <= 0 {
+					break
+				}
 
-		if finishedShuffles >= s.numShuffles {
-			fmt.Printf("finished %d shuffles\n", finishedShuffles)
-			close(inputChan)
-			break
+				countedShuffles++
+				count++
+
+				if countedShuffles >= s.numShuffles {
+					fmt.Printf("finished %d shuffles\n", countedShuffles)
+					close(inputChan)
+					break out
+				}
+			}
 		}
 
 		shuffleResults = append(shuffleResults, result.NewShuffleResult(0, nil))
@@ -170,13 +177,15 @@ func (s *Simulator) Run() {
 		shuffleId++
 	}
 
+	shuffleResults = shuffleResults[:countedShuffles]
+
 	var balanceSum int64
 	for _, result := range shuffleResults {
-		balanceSum += int64(result.GetBalance())
+		balanceSum += int64(result.Balance)
 	}
-	averageBalance := float64(balanceSum) / float64(s.numShuffles)
+	averageBalance := float64(balanceSum) / float64(countedShuffles)
 
-	fmt.Printf("Average balance after %d shuffles: %.2f\n", s.numShuffles, averageBalance)
+	fmt.Printf("Average balance after %d shuffles: %.2f\n", countedShuffles, averageBalance)
 	fmt.Printf("Final balance sum: %d\n", balanceSum)
 
 	if s.csvFile != "" {
