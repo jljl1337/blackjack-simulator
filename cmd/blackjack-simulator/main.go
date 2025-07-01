@@ -6,5 +6,9 @@ import (
 
 func main() {
 	s := simulation.NewSimulator()
+	if s == nil {
+		return
+	}
+
 	s.Run()
 }

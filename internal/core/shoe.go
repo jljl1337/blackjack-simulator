@@ -8,11 +8,11 @@ import (
 type Shoe struct {
 	cards       []Card
 	penetration float64
-	numDecks    int
+	numDecks    uint
 }
 
 // NewShoe creates a shoe with a specified number of decks
-func NewShoe(numDecks int, penetration float64, rand *rand.Rand) *Shoe {
+func NewShoe(numDecks uint, penetration float64, rand *rand.Rand) *Shoe {
 	s := &Shoe{numDecks: numDecks, penetration: penetration}
 	for range numDecks {
 		s.cards = append(s.cards, NewDeck()...)
