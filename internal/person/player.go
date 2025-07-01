@@ -16,7 +16,7 @@ type Player struct {
 
 func NewPlayer(strategy blackjack.Strategy) *Player {
 	return &Player{
-		hands:    []*PlayerHand{{}},
+		hands:    []*PlayerHand{NewPlayerHand()},
 		balance:  0,
 		strategy: strategy,
 	}
