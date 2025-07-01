@@ -33,6 +33,10 @@ func (d Dealer) GetHandValue() int {
 	return d.hand.Value()
 }
 
+func (d Dealer) GetHand() Hand {
+	return d.hand
+}
+
 func (d *Dealer) EndRound() {
 	d.hand = Hand{}
 }
