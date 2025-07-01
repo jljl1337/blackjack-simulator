@@ -164,7 +164,7 @@ out:
 				countedShuffles++
 				count++
 
-				if countedShuffles >= s.numShuffles {
+				if count >= s.numShuffles {
 					fmt.Printf("finished %d shuffles\n", countedShuffles)
 					close(inputChan)
 					break out
