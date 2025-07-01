@@ -168,12 +168,12 @@ func (p *Player) Split(newCards []core.Card) error {
 	return nil
 }
 
-func (p *Player) WinCurrentHand(loseRatio float64) error {
-	return p.winHand(p.currentHand, loseRatio)
+func (p *Player) WinCurrentHand(winRatio float64) error {
+	return p.winHand(p.currentHand, winRatio)
 }
 
-func (p *Player) LoseCurrentHand(winRatio float64) error {
-	return p.loseHand(p.currentHand, winRatio)
+func (p *Player) LoseCurrentHand(loseRatio float64) error {
+	return p.loseHand(p.currentHand, loseRatio)
 }
 
 func (p *Player) winHand(index int, winRatio float64) error {
