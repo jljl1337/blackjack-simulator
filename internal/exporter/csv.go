@@ -22,9 +22,10 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 	data := make([][]string, 0, len(results))
 
 	data = append(data, []string{
-		"shuffle_id",
-		"round_id",
-		"hand_id",
+		"id",
+		"shuffle",
+		"round",
+		"hand",
 		"dealer_hand",
 		"player_hand",
 		"dealer_value",
@@ -33,6 +34,8 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 		"bet_placed",
 		"bet",
 	})
+
+	id := 0
 
 	for resultID, result := range results {
 		for roundID, roundResult := range result.RoundResults {
@@ -57,6 +60,7 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 				}
 
 				data = append(data, []string{
+					strconv.Itoa(id),
 					strconv.Itoa(resultID),
 					strconv.Itoa(roundID),
 					strconv.Itoa(handID),
@@ -68,6 +72,8 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 					betPlaced,
 					bet,
 				})
+
+				id++
 			}
 		}
 	}
