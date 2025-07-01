@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"math/rand"
 	"os"
 	"runtime"
@@ -38,7 +39,7 @@ type Config struct {
 	Penetration float64 `json:"penetration"`
 }
 
-func NewSimulator() *Simulator {
+func NewSimulator() (*Simulator, error) {
 	configFile := flag.String("config", "config.json", "Path to configuration file")
 	csvFile := flag.String("csv", "", "CSV file to export results to")
 	numWorkers := flag.Uint("num-workers", 0, "Number of workers to use for concurrent processing")
@@ -51,17 +52,15 @@ func NewSimulator() *Simulator {
 
 	config, err := readConfig(*configFile)
 	if err != nil {
-		fmt.Printf("Error reading %s: %v\n", *configFile, err)
-		return nil
+		return nil, fmt.Errorf("error reading %s: %w", *configFile, err)
 	}
 
-	fmt.Printf("Using seed: %d\n", config.Seed)
-	fmt.Printf("Number of workers: %d\n", *numWorkers)
+	log.Printf("Using seed: %d\n", config.Seed)
+	log.Printf("Number of workers: %d\n", *numWorkers)
 
 	strategy, err := blackjack.NewBasicStrategyS17()
 	if err != nil {
-		fmt.Printf("Error creating strategy: %v\n", err)
-		return nil
+		return nil, fmt.Errorf("error creating strategy: %w", err)
 	}
 
 	return &Simulator{
@@ -74,7 +73,7 @@ func NewSimulator() *Simulator {
 		csvFile:     *csvFile,
 		numWorkers:  *numWorkers,
 		strategy:    strategy,
-	}
+	}, nil
 }
 
 func readConfig(configFile string) (Config, error) {
@@ -135,7 +134,7 @@ func readConfig(configFile string) (Config, error) {
 	return config, nil
 }
 
-func (s *Simulator) Run() {
+func (s *Simulator) Run() error {
 	random := rand.New(rand.NewSource(s.seed))
 
 	inputChan := make(chan ShuffleInput, s.numWorkers)
@@ -164,11 +163,10 @@ out:
 	for {
 		shuffleResult := <-resultChan
 		if shuffleResult.Error != nil {
-			fmt.Printf("Error in shuffle %d: %v\n", shuffleResult.ShuffleId, shuffleResult.Error)
-			break
+			return fmt.Errorf("error in shuffle %d: %w", shuffleResult.ShuffleId, shuffleResult.Error)
 		}
 
-		// fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
+		// log.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", shuffleResult.ShuffleId, shuffleResult.NumRounds, shuffleResult.Balance)
 
 		shuffleResults[shuffleResult.ShuffleId] = shuffleResult
 
@@ -204,7 +202,7 @@ out:
 				}
 
 				if finish {
-					fmt.Printf("finished %d shuffles\n", countedShuffles)
+					log.Printf("Finished %d shuffles\n", countedShuffles)
 					close(inputChan)
 					break out
 				}
@@ -224,17 +222,19 @@ out:
 	}
 	averageBalance := float64(balanceSum) / float64(countedShuffles)
 
-	fmt.Printf("Average balance after %d shuffles: %.2f\n", countedShuffles, averageBalance)
-	fmt.Printf("Final balance sum: %d\n", balanceSum)
+	log.Printf("Average balance after %d shuffles: %.2f\n", countedShuffles, averageBalance)
+	log.Printf("Final balance sum: %d\n", balanceSum)
 
 	if s.csvFile != "" {
 		csvExporter := exporter.NewCSVExporter(s.csvFile)
-		fmt.Printf("Exporting results to CSV...\n")
+		log.Printf("Exporting results to CSV...\n")
 		if err := csvExporter.Export(shuffleResults); err != nil {
-			fmt.Printf("Error exporting results to CSV: %v\n", err)
-			return
+			return fmt.Errorf("error exporting results to CSV: %w", err)
 		}
 	}
+
+	log.Printf("Simulation completed successfully.\n")
+	return nil
 }
 
 func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
