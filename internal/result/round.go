@@ -23,3 +23,11 @@ func NewRoundResult(dealerHand person.Hand, playerHands []*person.PlayerHand) Ro
 func (r RoundResult) GetNumHands() int {
 	return len(r.PlayerHands)
 }
+
+func (r RoundResult) GetBalance() int {
+	balance := 0
+	for _, hand := range r.PlayerHands {
+		balance += hand.GetBet() - hand.GetBetPlaced()
+	}
+	return balance
+}

@@ -32,3 +32,11 @@ func (s ShuffleResult) GetNumHands() int {
 	}
 	return numHands
 }
+
+func (s ShuffleResult) GetBalance() int {
+	balance := 0
+	for _, round := range s.RoundResults {
+		balance += round.GetBalance()
+	}
+	return balance
+}

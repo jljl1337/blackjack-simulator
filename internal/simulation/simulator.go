@@ -35,7 +35,6 @@ func NewSimulator() *Simulator {
 }
 
 func (s *Simulator) Run() {
-
 	random := rand.New(rand.NewSource(s.seed))
 
 	var balanceSum int64
@@ -53,17 +52,11 @@ func (s *Simulator) Run() {
 			break
 		}
 
-		// Calculate the final balance for the player
-		playerFinalBalance := 0
-		for _, roundResult := range result.RoundResults {
-			for _, playerHand := range roundResult.PlayerHands {
-				playerFinalBalance += playerHand.GetBet() - playerHand.GetBetPlaced()
-			}
-		}
+		roundBalance := result.GetBalance()
 
-		fmt.Printf("Shuffle %.7d: Played %.3d rounds with final balance of: %d\n", i, len(result.RoundResults), playerFinalBalance)
+		fmt.Printf("Shuffle %d: Played %d rounds with final balance of: %d\n", i, result.GetNumRounds(), roundBalance)
 
-		balanceSum += int64(playerFinalBalance)
+		balanceSum += int64(roundBalance)
 
 		shuffleResults = append(shuffleResults, result)
 	}
