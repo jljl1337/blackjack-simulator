@@ -1,12 +1,12 @@
 package result
 
 type ShuffleResult struct {
-	ShuffleId    int
+	ShuffleId    uint
 	RoundResults []RoundResult
 	Error        error
 }
 
-func NewShuffleResult(shuffleId int, roundResults []RoundResult) ShuffleResult {
+func NewShuffleResult(shuffleId uint, roundResults []RoundResult) ShuffleResult {
 	return ShuffleResult{
 		ShuffleId:    shuffleId,
 		RoundResults: roundResults,
@@ -14,7 +14,7 @@ func NewShuffleResult(shuffleId int, roundResults []RoundResult) ShuffleResult {
 	}
 }
 
-func NewShuffleResultWithError(shuffleId int, err error) ShuffleResult {
+func NewShuffleResultWithError(shuffleId uint, err error) ShuffleResult {
 	return ShuffleResult{
 		ShuffleId: shuffleId,
 		Error:     err,

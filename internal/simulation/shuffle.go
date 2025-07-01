@@ -10,7 +10,7 @@ import (
 )
 
 func PlayShuffle(
-	shuffleId int,
+	shuffleId uint,
 	player person.Player,
 	dealer person.Dealer,
 	shoe core.Shoe,

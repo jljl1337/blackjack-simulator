@@ -15,13 +15,13 @@ import (
 
 type Simulator struct {
 	seed        int64
-	numShuffles int
+	numShuffles uint
 	csvFile     string
 }
 
 func NewSimulator() *Simulator {
 	seed := flag.Int64("seed", time.Now().UnixNano(), "Random seed for simulation")
-	numShuffles := flag.Int("num-shuffles", 100000, "Number of shuffles to simulate")
+	numShuffles := flag.Uint("num-shuffles", 100000, "Number of shuffles to simulate")
 	csvFile := flag.String("csv", "", "CSV file to export results to")
 
 	flag.Parse()
