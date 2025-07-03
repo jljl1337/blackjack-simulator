@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+version: 2
+
+builds:
+  - goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    main: ./cmd/blackjack-simulator
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - formats: ["zip"]
+    format_overrides:
+      - goos: "linux"
+        formats: ["tar.gz"]
+
+changelog:
+  use: github-native
