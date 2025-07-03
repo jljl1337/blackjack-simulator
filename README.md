@@ -21,10 +21,11 @@ You can download the latest release from the [Releases page](https://github.com/
 
 ### Docker Image
 
-Alternatively, you can run the simulator using Docker (Note that the default directory is `/app`):
+Alternatively, you can run the simulator using Docker (assuming you have a 
+`config.json` file in the current directory):
 
-```bash
-docker run --rm -it -v ./config.json:/app/config.json jljl1337/blackjack-simulator:latest -config /path/to/config.json
+```sh
+docker run --rm -it -v ./config.json:/app/config.json jljl1337/blackjack-simulator
 ```
 
 ## Usage
@@ -52,4 +53,5 @@ Sample configuration file can be found in the repository root as `config.json`.
 | `penetration` | `float64` | Shoe penetration percentage with a range of (0, 1]. Determines portion of the shoe that is dealt before reshuffling. |
 
 > [!IMPORTANT]  
-> The `numShuffles`, `numRounds`, and `numHands` fields are mutually exclusive, exactly one must be specified with a value greater than 0.
+> The `numShuffles`, `numRounds`, and `numHands` fields are mutually exclusive,
+> exactly one must be specified with a value greater than 0.
