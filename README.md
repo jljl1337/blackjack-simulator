@@ -13,6 +13,20 @@
 - **Reproducible**: Exact same result can be achieved by using the same seed and version.
 - **Simple**: No dependencies, released as just a single binary to run.
 
+## Installation
+
+### Native Binary
+
+You can download the latest release from the [Releases page](https://github.com/jljl1337/blackjack-simulator/releases).
+
+### Docker Image
+
+Alternatively, you can run the simulator using Docker (Note that the default directory is `/app`):
+
+```bash
+docker run --rm -it -v ./config.json:/app/config.json jljl1337/blackjack-simulator:latest -config /path/to/config.json
+```
+
 ## Usage
 
 ### Flags
