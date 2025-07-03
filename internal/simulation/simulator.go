@@ -251,7 +251,7 @@ out:
 func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
 	player := person.NewPlayer(s.strategy)
 	dealer := person.NewDealer()
-	rules := NewPlayRules()
+	rules := NewRules()
 	shoe := core.NewShoe(s.numDecks, s.penetration, random)
 
 	input := ShuffleInput{

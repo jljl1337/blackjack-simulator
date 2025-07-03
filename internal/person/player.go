@@ -238,6 +238,14 @@ func (p *Player) HasNextHand() bool {
 	return p.currentHand < len(p.hands)-1
 }
 
+func (p Player) SplitAce() bool {
+	return len(p.hands) > 1 && p.hands[0].cards[0].Rank == core.Ace
+}
+
+func (p Player) GetNumHands() int {
+	return len(p.hands)
+}
+
 func (p Player) GetHands() []*PlayerHand {
 	return p.hands
 }

@@ -7,18 +7,18 @@ import (
 // Rules implements the rules of the game for a single round of blackjack.
 type Rules struct{}
 
-// NewPlayRules creates a new instance of PlayRules.
-func NewPlayRules() Rules {
+// NewRules creates a new instance of PlayRules.
+func NewRules() Rules {
 	return Rules{}
 }
 
-func (r Rules) GetActionsAllowed(currentHandSize int) (map[blackjack.Action]bool, error) {
+func (r Rules) GetActionsAllowed(currentHandSize int, numHands int, splitAce bool) (map[blackjack.Action]bool, error) {
 	// This method should return the actions available to the player.
 	return map[blackjack.Action]bool{
-		blackjack.Hit:       true,
+		blackjack.Hit:       !splitAce,
 		blackjack.Stand:     true,
-		blackjack.Double:    currentHandSize == 2,
-		blackjack.Split:     true,
+		blackjack.Double:    !splitAce && numHands < 2 && currentHandSize == 2,
+		blackjack.Split:     !splitAce && numHands < 4,
 		blackjack.Surrender: true,
 	}, nil
 }
