@@ -97,7 +97,9 @@ func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 			}
 
 			if selectedAction != blackjack.Blackjack {
-				player.RecordAction(selectedAction)
+				if err := player.RecordAction(selectedAction); err != nil {
+					return result.NewShuffleResultWithError(shuffleId, err)
+				}
 			}
 
 			playerLoseRatio := 0.0
