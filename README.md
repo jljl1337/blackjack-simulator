@@ -1,7 +1,10 @@
 # blackjack-simulator
 
+[![Release](https://github.com/jljl1337/blackjack-simulator/actions/workflows/release.yml/badge.svg)](https://github.com/jljl1337/blackjack-simulator/actions/workflows/release.yml)
 [![Source](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/jljl1337/blackjack-simulator)
-[![License](https://img.shields.io/github/license/jljl1337/blackjack-simulator)](https://github.com/jljl1337/blackjack-simulator/blob/main/LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-jljl1337%2Fblackjack--simulator-blue?logo=docker)](https://hub.docker.com/r/jljl1337/blackjack-simulator)
+[![License](https://img.shields.io/github/license/jljl1337/blackjack-simulator?label=License
+)](https://github.com/jljl1337/blackjack-simulator/blob/main/LICENSE)
 
 ## Features
 
@@ -9,6 +12,20 @@
 - **Customizable**: Easily change the number of decks, penetration rate, and more.
 - **Reproducible**: Exact same result can be achieved by using the same seed and version.
 - **Simple**: No dependencies, released as just a single binary to run.
+
+## Installation
+
+### Native Binary
+
+You can download the latest release from the [Releases page](https://github.com/jljl1337/blackjack-simulator/releases).
+
+### Docker Image
+
+Alternatively, you can run the simulator using Docker (Note that the default directory is `/app`):
+
+```bash
+docker run --rm -it -v ./config.json:/app/config.json jljl1337/blackjack-simulator:latest -config /path/to/config.json
+```
 
 ## Usage
 
