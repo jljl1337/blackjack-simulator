@@ -68,6 +68,10 @@ func (h Hand) IsPair() bool {
 	return len(h.cards) == 2 && h.cards[0].Rank == h.cards[1].Rank
 }
 
+func (h Hand) GetSize() int {
+	return len(h.cards)
+}
+
 func (h *Hand) AddCard(card core.Card) {
 	h.cards = append(h.cards, card)
 }
