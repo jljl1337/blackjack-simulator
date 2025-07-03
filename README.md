@@ -1,7 +1,10 @@
 # blackjack-simulator
 
+[![Release](https://github.com/jljl1337/blackjack-simulator/actions/workflows/release.yml/badge.svg)](https://github.com/jljl1337/blackjack-simulator/actions/workflows/release.yml)
 [![Source](https://img.shields.io/badge/Source-GitHub-blue?logo=github)](https://github.com/jljl1337/blackjack-simulator)
-[![License](https://img.shields.io/github/license/jljl1337/blackjack-simulator)](https://github.com/jljl1337/blackjack-simulator/blob/main/LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-jljl1337%2Fblackjack--simulator-blue?logo=docker)](https://hub.docker.com/r/jljl1337/blackjack-simulator)
+[![License](https://img.shields.io/github/license/jljl1337/blackjack-simulator?label=License
+)](https://github.com/jljl1337/blackjack-simulator/blob/main/LICENSE)
 
 ## Features
 
