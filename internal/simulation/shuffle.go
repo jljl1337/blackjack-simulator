@@ -56,8 +56,19 @@ func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 				player.LoseCurrentHand(1)
 			}
 			// Player also has blackjack, it's a push
+			// TODO: extract end round logic to a function?
+			roundResults = append(roundResults, result.NewRoundResult(
+				dealer.GetHand(),
+				player.GetHands(),
+			))
+
 			player.EndRound()
 			dealer.EndRound()
+
+			if shoe.NeedsShuffle() {
+				// Finish this shuffle and start a new one
+				return result.NewShuffleResult(shuffleId, roundResults)
+			}
 			continue
 		}
 
