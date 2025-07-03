@@ -30,6 +30,8 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 		"player_hand",
 		"dealer_value",
 		"player_value",
+		"dealer_hand_size",
+		"player_hand_size",
 		"player_actions",
 		"bet_placed",
 		"bet",
@@ -44,6 +46,8 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 				playerHands := playerHand.Hand.String()
 				dealerHandValue := strconv.Itoa(roundResult.DealerHand.Value())
 				playerHandValue := strconv.Itoa(playerHand.Value())
+				dealerHandSize := roundResult.DealerHand.GetSize()
+				playerHandSize := playerHand.GetSize()
 				playerActions := playerHand.GetActions()
 				betPlaced := strconv.Itoa(playerHand.GetBetPlaced())
 				bet := strconv.Itoa(playerHand.GetBet())
@@ -68,6 +72,8 @@ func (e CSVExporter) Export(results []result.ShuffleResult) error {
 					playerHands,
 					dealerHandValue,
 					playerHandValue,
+					strconv.Itoa(dealerHandSize),
+					strconv.Itoa(playerHandSize),
 					playerActionsString,
 					betPlaced,
 					bet,
