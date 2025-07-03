@@ -87,17 +87,20 @@ func (bs BasicStrategy) GetActions(
 	playerHand core.Hand,
 	dealerUpCard core.Card,
 ) ([]Action, error) {
-	var playerHandValueKey string
-	var err error
+	actions := []Action{}
 
 	if playerHand.IsPair() {
-		playerHandValueKey, err = playerHand.PairString()
+		pairString, err := playerHand.PairString()
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		playerHandValueKey = playerHand.ValueString()
+
+		actions = bs.strategyTable[pairString][dealerUpCard.ValueString()]
 	}
 
-	return bs.strategyTable[playerHandValueKey][dealerUpCard.ValueString()], nil
+	actions = append(actions, bs.strategyTable[playerHand.ValueString()][dealerUpCard.ValueString()]...)
+
+	actions = append(actions, Stand) // For no hit, split or double after split ace
+
+	return actions, nil
 }
