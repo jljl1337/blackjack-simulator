@@ -68,7 +68,12 @@ func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 				return result.NewShuffleResultWithError(shuffleId, err)
 			}
 
-			actionsAllowed, err := rules.GetActionsAllowed()
+			currentHandSize, err := player.GetCurrentHandSize()
+			if err != nil {
+				return result.NewShuffleResultWithError(shuffleId, err)
+			}
+
+			actionsAllowed, err := rules.GetActionsAllowed(currentHandSize)
 			if err != nil {
 				return result.NewShuffleResultWithError(shuffleId, err)
 			}
@@ -97,7 +102,9 @@ func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 			}
 
 			if selectedAction != blackjack.Blackjack {
-				player.RecordAction(selectedAction)
+				if err := player.RecordAction(selectedAction); err != nil {
+					return result.NewShuffleResultWithError(shuffleId, err)
+				}
 			}
 
 			playerLoseRatio := 0.0

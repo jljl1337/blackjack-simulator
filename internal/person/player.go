@@ -22,7 +22,7 @@ func NewPlayer(strategy blackjack.Strategy) *Player {
 
 func (p *Player) PlaceBet() error {
 	const betAmount = 100 // TODO: card counting
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func (p *Player) CalculateHandBet(dealerValue int) {
 }
 
 func (p *Player) DrawCard(card core.Card) error {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (p *Player) DrawCard(card core.Card) error {
 }
 
 func (p Player) CurrentHandIsBlackjack() (bool, error) {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return false, err
 	}
@@ -76,7 +76,7 @@ func (p Player) CurrentHandIsBlackjack() (bool, error) {
 }
 
 func (p Player) CurrentHandIsBusted() (bool, error) {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return false, err
 	}
@@ -84,8 +84,17 @@ func (p Player) CurrentHandIsBusted() (bool, error) {
 	return currentHand.IsBusted(), nil
 }
 
+func (p Player) GetCurrentHandSize() (int, error) {
+	currentHand, err := p.getCurrentHand()
+	if err != nil {
+		return 0, err
+	}
+
+	return len(currentHand.cards), nil
+}
+
 func (p *Player) GetActions(dealerUpCard core.Card) ([]blackjack.Action, error) {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +109,7 @@ func (p *Player) GetActions(dealerUpCard core.Card) ([]blackjack.Action, error) 
 }
 
 func (p *Player) RecordAction(action blackjack.Action) error {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -110,7 +119,7 @@ func (p *Player) RecordAction(action blackjack.Action) error {
 }
 
 func (p *Player) Hit(newCard core.Card) error {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -124,7 +133,7 @@ func (p *Player) Hit(newCard core.Card) error {
 }
 
 func (p *Player) DoubleDown(newCard core.Card) error {
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -146,7 +155,7 @@ func (p *Player) Split(newCards []core.Card) error {
 		return errors.New("split requires exactly two new card")
 	}
 
-	currentHand, err := p.GetCurrentHand()
+	currentHand, err := p.getCurrentHand()
 	if err != nil {
 		return err
 	}
@@ -200,8 +209,7 @@ func (p *Player) adjustHandBet(index int, ratio float64) error {
 	return nil
 }
 
-// TODO: Private?
-func (p *Player) GetCurrentHand() (*PlayerHand, error) {
+func (p *Player) getCurrentHand() (*PlayerHand, error) {
 	return p.getHand(p.currentHand)
 }
 
