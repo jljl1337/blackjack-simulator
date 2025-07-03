@@ -17,7 +17,7 @@ func (r Rules) GetActionsAllowed(currentHandSize int, numHands int, splitAce boo
 	return map[blackjack.Action]bool{
 		blackjack.Hit:       !splitAce,
 		blackjack.Stand:     true,
-		blackjack.Double:    !splitAce && currentHandSize == 2,
+		blackjack.Double:    !splitAce && numHands < 2 && currentHandSize == 2,
 		blackjack.Split:     !splitAce && numHands < 4,
 		blackjack.Surrender: true,
 	}, nil
