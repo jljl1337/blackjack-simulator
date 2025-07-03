@@ -12,13 +12,13 @@ func NewPlayRules() Rules {
 	return Rules{}
 }
 
-func (r Rules) GetActionsAllowed(currentHandSize int) (map[blackjack.Action]bool, error) {
+func (r Rules) GetActionsAllowed(currentHandSize int, numHands int, splitAce bool) (map[blackjack.Action]bool, error) {
 	// This method should return the actions available to the player.
 	return map[blackjack.Action]bool{
-		blackjack.Hit:       true,
+		blackjack.Hit:       !splitAce,
 		blackjack.Stand:     true,
-		blackjack.Double:    currentHandSize == 2,
-		blackjack.Split:     true,
+		blackjack.Double:    !splitAce && currentHandSize == 2,
+		blackjack.Split:     !splitAce && numHands < 4,
 		blackjack.Surrender: true,
 	}, nil
 }

@@ -84,7 +84,7 @@ func PlayShuffle(input ShuffleInput) result.ShuffleResult {
 				return result.NewShuffleResultWithError(shuffleId, err)
 			}
 
-			actionsAllowed, err := rules.GetActionsAllowed(currentHandSize)
+			actionsAllowed, err := rules.GetActionsAllowed(currentHandSize, player.GetNumHands(), player.SplitAce())
 			if err != nil {
 				return result.NewShuffleResultWithError(shuffleId, err)
 			}
