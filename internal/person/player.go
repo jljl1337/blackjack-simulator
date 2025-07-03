@@ -84,6 +84,15 @@ func (p Player) CurrentHandIsBusted() (bool, error) {
 	return currentHand.IsBusted(), nil
 }
 
+func (p Player) GetCurrentHandSize() (int, error) {
+	currentHand, err := p.getCurrentHand()
+	if err != nil {
+		return 0, err
+	}
+
+	return len(currentHand.cards), nil
+}
+
 func (p *Player) GetActions(dealerUpCard core.Card) ([]blackjack.Action, error) {
 	currentHand, err := p.getCurrentHand()
 	if err != nil {
