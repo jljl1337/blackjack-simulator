@@ -7,8 +7,8 @@ import (
 // Rules implements the rules of the game for a single round of blackjack.
 type Rules struct{}
 
-// NewPlayRules creates a new instance of PlayRules.
-func NewPlayRules() Rules {
+// NewRules creates a new instance of PlayRules.
+func NewRules() Rules {
 	return Rules{}
 }
 
