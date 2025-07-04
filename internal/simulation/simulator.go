@@ -19,25 +19,35 @@ import (
 )
 
 type Simulator struct {
-	seed        int64
-	numShuffles uint
-	numRounds   uint
-	numHands    uint
-	numDecks    uint
-	penetration float64
-	csvFile     string
-	numWorkers  uint
-	verbose     bool
-	strategy    blackjack.Strategy
+	seed                int64
+	numShuffles         uint
+	numRounds           uint
+	numHands            uint
+	numDecks            uint
+	penetration         float64
+	csvFile             string
+	numWorkers          uint
+	verbose             bool
+	strategy            blackjack.Strategy
+	doubleAfterSplit    bool
+	hitAfterSplitAce    bool
+	splitAfterSplitAce  bool
+	doubleAfterSplitAce bool
+	maxNumHands         int
 }
 
 type Config struct {
-	Seed        int64   `json:"seed"`
-	NumShuffles uint    `json:"numShuffles"`
-	NumRounds   uint    `json:"numRounds"`
-	NumHands    uint    `json:"numHands"`
-	NumDecks    uint    `json:"numDecks"`
-	Penetration float64 `json:"penetration"`
+	Seed                int64   `json:"seed"`
+	NumShuffles         uint    `json:"numShuffles"`
+	NumRounds           uint    `json:"numRounds"`
+	NumHands            uint    `json:"numHands"`
+	NumDecks            uint    `json:"numDecks"`
+	Penetration         float64 `json:"penetration"`
+	DoubleAfterSplit    bool    `json:"doubleAfterSplit"`
+	HitAfterSplitAce    bool    `json:"hitAfterSplitAce"`
+	SplitAfterSplitAce  bool    `json:"splitAfterSplitAce"`
+	DoubleAfterSplitAce bool    `json:"doubleAfterSplitAce"`
+	MaxNumHands         *int    `json:"maxNumHands"`
 }
 
 func NewSimulator() (*Simulator, error) {
@@ -69,17 +79,27 @@ func NewSimulator() (*Simulator, error) {
 		return nil, fmt.Errorf("error creating strategy: %w", err)
 	}
 
+	maxNumHands := 4
+	if config.MaxNumHands != nil {
+		maxNumHands = *config.MaxNumHands
+	}
+
 	return &Simulator{
-		seed:        config.Seed,
-		numShuffles: config.NumShuffles,
-		numDecks:    config.NumDecks,
-		numRounds:   config.NumRounds,
-		numHands:    config.NumHands,
-		penetration: config.Penetration,
-		csvFile:     *csvFile,
-		numWorkers:  *numWorkers,
-		verbose:     *verbose,
-		strategy:    strategy,
+		seed:                config.Seed,
+		numShuffles:         config.NumShuffles,
+		numDecks:            config.NumDecks,
+		numRounds:           config.NumRounds,
+		numHands:            config.NumHands,
+		penetration:         config.Penetration,
+		csvFile:             *csvFile,
+		numWorkers:          *numWorkers,
+		verbose:             *verbose,
+		strategy:            strategy,
+		doubleAfterSplit:    config.DoubleAfterSplit,
+		hitAfterSplitAce:    config.HitAfterSplitAce,
+		splitAfterSplitAce:  config.SplitAfterSplitAce,
+		doubleAfterSplitAce: config.DoubleAfterSplitAce,
+		maxNumHands:         maxNumHands,
 	}, nil
 }
 
@@ -251,7 +271,7 @@ out:
 func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
 	player := person.NewPlayer(s.strategy)
 	dealer := person.NewDealer()
-	rules := NewRules()
+	rules := NewRules(s.doubleAfterSplit, s.hitAfterSplitAce, s.splitAfterSplitAce, s.doubleAfterSplitAce, s.maxNumHands)
 	shoe := core.NewShoe(s.numDecks, s.penetration, random)
 
 	input := ShuffleInput{
