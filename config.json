@@ -2,5 +2,10 @@
   "seed": 1337,
   "numHands": 10000000,
   "numDecks": 8,
-  "penetration": 0.75
+  "penetration": 0.75,
+  "doubleAfterSplit": true,
+  "hitAfterSplitAce": true,
+  "splitAfterSplitAce": false,
+  "doubleAfterSplitAce": false,
+  "maxNumHands": 4
 }
