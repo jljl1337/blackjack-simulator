@@ -9,7 +9,7 @@
 ## Features
 
 - **Efficient**: Concurrency enabled by default, able to simulate millions of games in seconds.
-- **Customizable**: Easily change the number of decks, penetration rate, and more.
+- **Customizable**: Easily change the number of decks, rules, and more.
 - **Reproducible**: Exact same result can be achieved by using the same seed and version.
 - **Simple**: No dependencies, released as just a single binary to run.
 
@@ -51,6 +51,11 @@ Sample configuration file can be found in the repository root as `config.json`.
 | `numHands` | `uint` | Number of hands to simulate. |
 | `numDecks` | `uint` | Number of decks in the shoe. Must be greater than 0. |
 | `penetration` | `float64` | Shoe penetration percentage with a range of (0, 1]. Determines portion of the shoe that is dealt before reshuffling. |
+| `doubleAfterSplit` | `bool` | Whether doubling down is allowed after splitting a pair. Default: `false`. |
+| `hitAfterSplitAce` | `bool` | Whether hitting is allowed on hands formed by splitting aces. Default: `false`. |
+| `splitAfterSplitAce` | `bool` | Whether re-splitting aces is allowed. Default: `false`. |
+| `doubleAfterSplitAce` | `bool` | Whether doubling down is allowed on hands formed by splitting aces. Default: `false`. |
+| `maxNumHands` | `uint` | Maximum number of hands a player can have after splitting. If not specified, defaults to `4`. If explicitly set to `0`, splitting is disabled. If set to `-1`, splitting is allowed without limit. |
 
 > [!IMPORTANT]  
 > The `numShuffles`, `numRounds`, and `numHands` fields are mutually exclusive,
