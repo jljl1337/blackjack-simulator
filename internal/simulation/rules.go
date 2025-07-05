@@ -11,16 +11,18 @@ type Rules struct {
 	splitAfterSplitAce  bool
 	doubleAfterSplitAce bool
 	maxNumHands         int
+	surrenderAllowed    bool
 }
 
 // NewRules creates a new instance of PlayRules.
-func NewRules(doubleAfterSplit, hitAfterSplitAce, splitAfterSplitAce, doubleAfterSplitAce bool, maxNumHands int) Rules {
+func NewRules(doubleAfterSplit, hitAfterSplitAce, splitAfterSplitAce, doubleAfterSplitAce bool, maxNumHands int, surrenderAllowed bool) Rules {
 	return Rules{
 		doubleAfterSplit:    doubleAfterSplit,
 		hitAfterSplitAce:    hitAfterSplitAce,
 		splitAfterSplitAce:  splitAfterSplitAce,
 		doubleAfterSplitAce: doubleAfterSplitAce,
 		maxNumHands:         maxNumHands,
+		surrenderAllowed:    surrenderAllowed,
 	}
 }
 
@@ -41,6 +43,6 @@ func (r Rules) GetActionsAllowed(currentHandSize int, numHands int, splitAce boo
 		blackjack.Stand:     true,
 		blackjack.Double:    canDouble,
 		blackjack.Split:     canSplit,
-		blackjack.Surrender: true,
+		blackjack.Surrender: r.surrenderAllowed,
 	}, nil
 }
