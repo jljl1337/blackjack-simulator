@@ -56,6 +56,7 @@ Sample configuration file can be found in the repository root as `config.json`.
 | `splitAfterSplitAce` | `bool` | Whether re-splitting aces is allowed. Default: `false`. |
 | `doubleAfterSplitAce` | `bool` | Whether doubling down is allowed on hands formed by splitting aces. Default: `false`. |
 | `maxNumHands` | `uint` | Maximum number of hands a player can have after splitting. If not specified, defaults to `4`. If explicitly set to `0`, splitting is disabled. If set to `-1`, splitting is allowed without limit. |
+| `surrenderAllowed` | `bool` | Whether surrendering is allowed. If not specified, defaults to `true`. |
 
 > [!IMPORTANT]  
 > The `numShuffles`, `numRounds`, and `numHands` fields are mutually exclusive,
