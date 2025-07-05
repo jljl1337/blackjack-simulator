@@ -3,9 +3,10 @@
   "numHands": 10000000,
   "numDecks": 8,
   "penetration": 0.75,
-  "doubleAfterSplit": true,
-  "hitAfterSplitAce": true,
+  "doubleAfterSplit": false,
+  "hitAfterSplitAce": false,
   "splitAfterSplitAce": false,
   "doubleAfterSplitAce": false,
-  "maxNumHands": 4
+  "maxNumHands": 4,
+  "surrenderAllowed": true
 }

@@ -34,6 +34,7 @@ type Simulator struct {
 	splitAfterSplitAce  bool
 	doubleAfterSplitAce bool
 	maxNumHands         int
+	surrenderAllowed    bool
 }
 
 type Config struct {
@@ -48,6 +49,7 @@ type Config struct {
 	SplitAfterSplitAce  bool    `json:"splitAfterSplitAce"`
 	DoubleAfterSplitAce bool    `json:"doubleAfterSplitAce"`
 	MaxNumHands         *int    `json:"maxNumHands"`
+	SurrenderAllowed    *bool   `json:"surrenderAllowed"`
 }
 
 func NewSimulator() (*Simulator, error) {
@@ -84,6 +86,11 @@ func NewSimulator() (*Simulator, error) {
 		maxNumHands = *config.MaxNumHands
 	}
 
+	surrenderAllowed := true
+	if config.SurrenderAllowed != nil {
+		surrenderAllowed = *config.SurrenderAllowed
+	}
+
 	return &Simulator{
 		seed:                config.Seed,
 		numShuffles:         config.NumShuffles,
@@ -100,6 +107,7 @@ func NewSimulator() (*Simulator, error) {
 		splitAfterSplitAce:  config.SplitAfterSplitAce,
 		doubleAfterSplitAce: config.DoubleAfterSplitAce,
 		maxNumHands:         maxNumHands,
+		surrenderAllowed:    surrenderAllowed,
 	}, nil
 }
 
@@ -271,7 +279,7 @@ out:
 func (s *Simulator) sendInput(inputChan chan<- ShuffleInput, shuffleId uint, random *rand.Rand) {
 	player := person.NewPlayer(s.strategy)
 	dealer := person.NewDealer()
-	rules := NewRules(s.doubleAfterSplit, s.hitAfterSplitAce, s.splitAfterSplitAce, s.doubleAfterSplitAce, s.maxNumHands)
+	rules := NewRules(s.doubleAfterSplit, s.hitAfterSplitAce, s.splitAfterSplitAce, s.doubleAfterSplitAce, s.maxNumHands, s.surrenderAllowed)
 	shoe := core.NewShoe(s.numDecks, s.penetration, random)
 
 	input := ShuffleInput{
